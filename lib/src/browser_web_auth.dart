@@ -14,9 +14,15 @@ class BrowserWebAuth implements BaseWebAuth {
     // ignore: unsafe_html
     final popupLogin = web.window.open(url, 'oauth2_client::authenticateWindow',
         'menubar=no, status=no, scrollbars=no, menubar=no, width=1000, height=500');
-
-    var messageEvt = await web.window.onMessage
-        .firstWhere((evt) => evt.origin == Uri.parse(redirectUrl).origin);
+    var messageEvt = await web.window.onMessage.firstWhere((evt) {
+      if (evt.origin != Uri.parse(redirectUrl).origin) {
+        return false;
+      }
+      final data = evt.data.toString();
+      final queryParameters = Uri.tryParse(data)?.queryParameters;
+      return queryParameters != null &&
+          (queryParameters["error"] != null || queryParameters["code"] != null);
+    });
 
     popupLogin?.close();
 
